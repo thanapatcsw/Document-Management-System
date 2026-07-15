@@ -1,18 +1,19 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock, History, FileText, Download, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, Download, AlertCircle } from "lucide-react";
 import { getDocuments } from "@/features/documents/api";
 import { getWorkflow } from "@/features/workflow/api";
-import { WorkflowTracker } from "@/components/workflow/WorkflowTracker";
 import PageHeader from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { getStatusVariant } from "@/lib/document-status";
+import { WorkflowTracker } from "@/components/workflow/WorkflowTracker";
+import { ApprovalActions } from "@/components/workflow/ApprovalActions";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function DocumentDetailPage({ params }: PageProps) {
+export default async function ApprovalDetailPage({ params }: PageProps) {
   const { id } = await params;
   
   // Fetch documents from Mock API
@@ -31,10 +32,10 @@ export default async function DocumentDetailPage({ params }: PageProps) {
           The document ID "{id}" could not be located in the database.
         </p>
         <Link
-          href="/documents"
+          href="/approvals"
           className="mt-6 px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition-colors"
         >
-          Back to Documents
+          Back to Approvals
         </Link>
       </div>
     );
@@ -45,26 +46,18 @@ export default async function DocumentDetailPage({ params }: PageProps) {
       
       <div className="flex justify-between items-center">
         <Link
-          href="/documents"
+          href="/approvals"
           className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Documents
-        </Link>
-
-        <Link
-          href={`/documents/${doc.id}/versions`}
-          className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
-        >
-          <History className="w-4 h-4" />
-          Version History
+          Back to Inbox
         </Link>
       </div>
 
       <PageHeader
         size="compact"
-        title={`Document: ${doc.id}`}
-        subtitle="Review document properties, transaction metadata, and workflow logs."
+        title={`Review: ${doc.id}`}
+        subtitle="Please review the document details and provide your approval decision."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -111,17 +104,18 @@ export default async function DocumentDetailPage({ params }: PageProps) {
           {/* SIMULATED DOCUMENT PREVIEW LAYER */}
           <div className="bg-white rounded-2xl p-6 border border-slate-100/50 shadow-sm space-y-4">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Document Preview (Simulation)
+              Document View
             </h4>
-            <div className="bg-slate-50 rounded-xl p-8 border border-slate-150 text-center min-h-[250px] flex flex-col justify-center items-center">
+            <div className="bg-slate-50 rounded-xl p-8 border border-slate-150 text-center min-h-[350px] flex flex-col justify-center items-center relative">
               <FileText className="w-10 h-10 text-slate-300 mb-3" />
               <p className="text-xs font-bold text-slate-600">{doc.name}.pdf</p>
-              <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                Version: {doc.version} | Size: ~1.4 MB
+              <p className="text-sm text-slate-500 mt-2">
+                (PDF Viewer will be implemented in Phase 2.3)
               </p>
+              
               <button
                 type="button"
-                className="mt-4 flex items-center gap-1.5 px-4 py-2 border border-slate-200 hover:bg-white text-slate-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className="mt-6 flex items-center gap-1.5 px-4 py-2 border border-slate-200 hover:bg-white text-slate-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download Original File
@@ -139,6 +133,8 @@ export default async function DocumentDetailPage({ params }: PageProps) {
               ไม่พบข้อมูลสายอนุมัติ
             </div>
           )}
+          
+          <ApprovalActions documentId={doc.id} />
         </div>
 
       </div>
