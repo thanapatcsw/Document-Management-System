@@ -99,7 +99,9 @@ export default async function DocumentDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Valuation</p>
-                <p className="text-sm font-bold text-slate-800 mt-1">{doc.amount}</p>
+                <p className={`text-sm font-bold mt-1 ${doc.amount && doc.amount !== "-" ? "text-blue-600 font-mono" : "text-slate-400"}`}>
+                  {doc.amount && doc.amount !== "-" ? doc.amount : "-"}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Version</p>
@@ -115,6 +117,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
             documentName={doc.name}
             version={doc.version}
             initialStatus={doc.status}
+            signaturePlaced={doc.status === "Approved"}
           />
         </div>
 

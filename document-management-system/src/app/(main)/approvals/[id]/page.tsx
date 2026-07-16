@@ -1,8 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Download, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, AlertCircle } from "lucide-react";
 import { getDocuments } from "@/features/documents/api";
-import { getWorkflow } from "@/features/workflow/api";
+import type { Document } from "@/features/documents/types";
+import { getWorkflow, WorkflowData } from "@/features/workflow/api";
 import PageHeader from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { getStatusVariant } from "@/lib/document-status";
@@ -14,13 +17,29 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function ApprovalDetailPage({ params }: PageProps) {
-  const { id } = await params;
-  
-  // Fetch documents from Mock API
-  const documents = await getDocuments();
-  const doc = documents.find((d) => d.id === id);
-  const workflow = await getWorkflow(id);
+export default function ApprovalDetailPage({ params }: PageProps) {
+  const { id } = use(params);
+  const [doc, setDoc] = useState<Document | null>(null);
+  const [workflow, setWorkflow] = useState<WorkflowData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [signaturePlaced, setSignaturePlaced] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getDocuments(), getWorkflow(id)]).then(([docs, wf]) => {
+      const found = docs.find((d) => d.id === id);
+      setDoc(found || null);
+      setWorkflow(wf);
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-12 text-slate-400 font-bold text-sm">
+        กำลังโหลดข้อมูลเอกสาร...
+      </div>
+    );
+  }
 
   if (!doc) {
     return (
@@ -42,37 +61,38 @@ export default async function ApprovalDetailPage({ params }: PageProps) {
     );
   }
 
+  const isMonetaryDoc = doc.amount && doc.amount !== "-";
+
   return (
     <div className="flex-1 flex flex-col min-w-0 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
       <div className="flex justify-between items-center">
         <Link
           href="/approvals"
           className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Inbox
+          กลับไปยัง Inbox (Back to Approvals)
         </Link>
       </div>
 
       <PageHeader
         size="compact"
         title={`Review: ${doc.id}`}
-        subtitle="Please review the document details and provide your approval decision."
+        subtitle="ตรวจสอบรายละเอียดเอกสารและประทับลายเซ็นเพื่อดำเนินการพิจารณา"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* LEFT COLUMN: Main Info */}
+        {/* LEFT COLUMN: Main Info & Viewer */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-slate-100/50 shadow-sm space-y-6">
-            
             <div className="flex items-start gap-4 pb-6 border-b border-slate-100">
               <div className="p-3 bg-slate-50 rounded-xl text-slate-400 shrink-0">
                 <FileText className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-900 leading-snug">{doc.name}</h3>
+                <h3 className="text-base font-bold text-slate-900 leading-snug">
+                  {doc.name}
+                </h3>
                 <p className="text-xs text-slate-400 font-semibold">
                   Submitted by {doc.sender} on {doc.submittedDate}
                 </p>
@@ -81,37 +101,58 @@ export default async function ApprovalDetailPage({ params }: PageProps) {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</p>
-                <p className="text-sm font-bold text-slate-800 mt-1">{doc.type}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Type
+                </p>
+                <p className="text-sm font-bold text-slate-800 mt-1">
+                  {doc.type}
+                </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Status
+                </p>
                 <div className="mt-1">
-                  <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
+                  <Badge variant={getStatusVariant(doc.status)}>
+                    {doc.status}
+                  </Badge>
                 </div>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Valuation</p>
-                <p className="text-sm font-bold text-slate-800 mt-1">{doc.amount}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Valuation
+                </p>
+                <p
+                  className={`text-sm font-bold mt-1 ${
+                    isMonetaryDoc ? "text-blue-600 font-mono" : "text-slate-400"
+                  }`}
+                >
+                  {isMonetaryDoc ? doc.amount : "-"}
+                </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Version</p>
-                <p className="text-sm font-bold text-slate-800 mt-1">{doc.version}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Version
+                </p>
+                <p className="text-sm font-bold text-slate-800 mt-1">
+                  {doc.version}
+                </p>
               </div>
             </div>
-
           </div>
 
           {/* E-SIGNATURE PDF VIEWER (MOCK) */}
-          <DocumentSignerViewer 
+          <DocumentSignerViewer
             documentId={doc.id}
             documentName={doc.name}
             version={doc.version}
             initialStatus={doc.status}
+            signaturePlaced={signaturePlaced}
+            onSignatureChange={setSignaturePlaced}
           />
         </div>
 
-        {/* RIGHT COLUMN: Activity/Workflow */}
+        {/* RIGHT COLUMN: Workflow Tracker & Action Controls */}
         <div className="space-y-6">
           {workflow ? (
             <WorkflowTracker workflow={workflow} />
@@ -120,12 +161,13 @@ export default async function ApprovalDetailPage({ params }: PageProps) {
               ไม่พบข้อมูลสายอนุมัติ
             </div>
           )}
-          
-          <ApprovalActions documentId={doc.id} />
+
+          <ApprovalActions
+            documentId={doc.id}
+            signaturePlaced={signaturePlaced}
+          />
         </div>
-
       </div>
-
     </div>
   );
 }
